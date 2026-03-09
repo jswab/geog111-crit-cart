@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Critical Cartography</title>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --white: #fafaf8;
+  --off: #f0ede7;
+  --ink: #1a1814;
+  --mid: #6b6560;
+  --accent: #d4421a;
+  --border: #dddad4;
+  --card: #ffffff;
+  --green: #2a7a4a;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  background: var(--white);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* TOP BAR */
+#topbar {
+  flex-shrink: 0;
+  height: 52px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  gap: 1.5rem;
+}
+.logo { font-family: 'Bitter', serif; font-size: 0.95rem; font-weight: 700; flex-shrink: 0; white-space: nowrap; }
+.logo span { color: var(--accent); }
+.progress-track { display: flex; gap: 5px; align-items: center; flex: 1; justify-content: center; }
+.prog-dot { width: 22px; height: 4px; border-radius: 2px; background: var(--border); transition: background 0.3s, width 0.3s; cursor: pointer; border: none; padding: 0; flex-shrink: 0; }
+.prog-dot.done { background: var(--accent); opacity: 0.4; }
+.prog-dot.active { background: var(--accent); width: 34px; }
+.slide-counter { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--mid); flex-shrink: 0; white-space: nowrap; }
+
+/* SLIDE AREA */
+#slide-area { flex: 1; overflow-y: auto; overflow-x: hidden; }
+
+/* BOTTOM NAV */
+#nav-bar {
+  flex-shrink: 0;
+  height: 60px;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  gap: 1rem;
+}
+.nav-hint { font-size: 0.7rem; color: var(--mid); font-family: 'DM Mono', monospace; }
+.nav-btns { display: flex; gap: 0.6rem; }
+.btn-nav { display: flex; align-items: center; padding: 0.55rem 1.2rem; border-radius: 6px; font-size: 0.82rem; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; border: 1.5px solid var(--border); background: var(--card); color: var(--ink); transition: all 0.15s; white-space: nowrap; }
+.btn-nav:hover:not(:disabled) { border-color: var(--ink); }
+.btn-nav:disabled { opacity: 0.3; cursor: default; }
+.btn-next { background: var(--ink); color: var(--white); border-color: var(--ink); }
+.btn-next:hover:not(:disabled) { background: #2d2a26; }
+
+/* SLIDES */
+.slide { display: none; }
+.slide.active { display: block; animation: fadeSlide 0.3s ease; }
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── INTRO ── */
+.slide-intro.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 112px);
+  background: var(--ink);
+  color: var(--white);
+  text-align: center;
+  padding: 3rem 2rem;
+}
+.intro-inner { max-width: 520px; }
+.intro-tag { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.25em; color: var(--accent); text-transform: uppercase; margin-bottom: 1.5rem; }
+.intro-h { font-family: 'Bitter', serif; font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 700; line-height: 1.05; margin-bottom: 1.25rem; }
+.intro-h em { font-style: italic; color: #f0a070; }
+.intro-sub { font-size: 1rem; color: #a0ada8; line-height: 1.75; margin-bottom: 2.5rem; }
+.intro-pills { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+.intro-pill { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); padding: 0.4rem 0.85rem; border-radius: 100px; font-size: 0.72rem; color: #a0ada8; }
+
+/* ── EXAMPLE ── */
+.slide-example.active {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: calc(100vh - 112px);
+}
+@media (max-width: 700px) {
+  .slide-example.active { grid-template-columns: 1fr; }
+  .panel-visual { border-right: none !important; border-bottom: 1px solid var(--border); min-height: 260px; }
+}
+
+.panel-visual {
+  background: var(--off);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Image fills the full panel */
+.panel-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  position: absolute;
+  inset: 0;
+}
+
+/* Caption bar overlaid at bottom */
+.panel-caption {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(26,24,20,0.78);
+  backdrop-filter: blur(4px);
+  padding: 0.65rem 1rem;
+  font-size: 0.68rem;
+  font-style: italic;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.45;
+  z-index: 2;
+}
+
+.panel-content {
+  padding: 2.5rem 2.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.ex-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem; }
+.ex-num { background: var(--accent); color: white; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 600; flex-shrink: 0; }
+.ex-title { font-family: 'Bitter', serif; font-size: clamp(1.3rem, 2.5vw, 1.9rem); font-weight: 700; line-height: 1.15; margin-bottom: 1rem; }
+.ex-body { font-size: 0.9rem; line-height: 1.8; color: #3a3632; margin-bottom: 1.25rem; }
+.ex-body strong { color: var(--ink); }
+.ex-body em { font-style: italic; }
+
+.takeaway {
+  background: var(--off);
+  border-left: 3px solid var(--accent);
+  padding: 0.85rem 1rem;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--mid);
+  border-radius: 0 4px 4px 0;
+}
+.takeaway-label { font-family: 'DM Mono', monospace; font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink); margin-bottom: 0.3rem; display: block; }
+
+/* ── END ── */
+.slide-end.active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  background: var(--ink);
+  color: var(--white);
+  min-height: calc(100vh - 112px);
+}
+.end-icon { font-size: 2.5rem; margin-bottom: 1.25rem; }
+.end-h { font-family: 'Bitter', serif; font-size: 1.9rem; font-weight: 700; margin-bottom: 1rem; }
+.end-body { max-width: 460px; font-size: 0.92rem; line-height: 1.8; color: #a8a5a0; margin: 0 auto 1.75rem; }
+.end-tags { display: flex; flex-wrap: wrap; gap: 0.45rem; justify-content: center; max-width: 480px; margin: 0 auto 2rem; }
+.end-tag { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); padding: 0.38rem 0.8rem; border-radius: 100px; font-size: 0.72rem; color: #c0bdb8; }
+.btn-restart { background: var(--accent); color: white; border: none; padding: 0.8rem 1.8rem; border-radius: 6px; font-size: 0.85rem; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: background 0.15s; }
+.btn-restart:hover { background: #b53515; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="logo">Critical <span>Carto</span></div>
+  <div class="progress-track" id="progressTrack"></div>
+  <div class="slide-counter" id="slideCounter"></div>
+</div>
+
+<div id="slide-area"></div>
+
+<div id="nav-bar">
+  <div class="nav-hint" id="navHint"></div>
+  <div class="nav-btns">
+    <button class="btn-nav" id="btnPrev">← Back</button>
+    <button class="btn-nav btn-next" id="btnNext">Next →</button>
+  </div>
+</div>
+
+<script>
+const slides = [
+  {
+    type: 'intro',
+    tag: 'An Interactive Course',
+    title: 'Maps <em>Lie</em>.<br>Here\'s How.',
+    sub: 'Four real examples that reveal how cartography shapes power, politics, and whose world gets to exist.',
+    pills: ['4 Examples', 'Real Cases', '~5 min'],
+  },
+  {
+    type: 'example',
+    num: 1,
+    label: 'Names & Erasure',
+    title: 'Renaming as Conquest',
+    body: 'When European colonizers arrived in new territories, they didn\'t just claim the land — they <strong>renamed it</strong>. Indigenous place names were systematically replaced with European ones, erasing thousands of years of geographic memory embedded in language.\n\nThese names weren\'t decorative. They encoded <em>ecological knowledge, historical events, seasonal patterns, and territorial relationships</em>. Replacing them didn\'t just change the map — it severed living communities from their own spatial narratives.\n\nThe map above shows the Lenape name <em>Lenapewhittuck</em> ("the river of the Lenape people") being replaced by the colonial label "Delaware River" — named for a British governor who never set foot near it.',
+    takeaway: 'Renaming is a form of territorial claim. Indigenous place names encode sovereignty that colonial maps deliberately overwrote — and some are only now being restored.',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Lenapewhittuck_map.jpg/800px-Lenapewhittuck_map.jpg',
+    imgFallback: 'https://images.squarespace-cdn.com/content/v1/5d4a5c5b0d9d5e0001a1f1a1/1630000000000-PLACEHOLDER/indigenous-place-names.jpg',
+    caption: 'Lenapewhittuck to the Delaware River — the colonial renaming of a Lenape waterway. From the Public History Project.',
+  },
+  {
+    type: 'example',
+    num: 2,
+    label: 'Orientation & Power',
+    title: 'Why Is North "Up"?',
+    body: 'There\'s no physical reason north should sit at the top of maps. The Earth has no inherent up or down in space. Yet virtually every map places north at the top — a convention that took hold during an era of <strong>Northern European cartographic dominance</strong> and has shaped global mental maps ever since.\n\nMedieval Islamic cartographers routinely placed <strong>south at the top</strong>. Al-Idrisi\'s 1154 world map for Roger II of Sicily centered Arab territories at the heart of the world.\n\nIn 1979, Australian student Stuart McArthur published his <em>Universal Corrective Map of the World</em> — south up, Australia centered — as a direct challenge to the assumption that north equals up equals important.',
+    takeaway: 'North-up isn\'t geographic fact — it\'s a convention that encodes hierarchy. Flipping the map doesn\'t change the world, but it makes the convention suddenly visible.',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/McArthur%27s_Universal_Corrective_Map_of_the_World.jpg/1024px-McArthur%27s_Universal_Corrective_Map_of_the_World.jpg',
+    caption: 'McArthur\'s Universal Corrective Map of the World (1979). Subtitle: "Now at last — the World as it really is!" South is at the top; Australia is at the center.',
+  },
+  {
+    type: 'example',
+    num: 3,
+    label: 'Counter-Mapping',
+    title: 'When Communities Map Back',
+    body: 'In the 1990s, indigenous Dayak communities in Indonesian Borneo were losing their forests to logging concessions — partly because the state didn\'t recognize territorial claims that weren\'t expressed in official cartographic terms. <strong>Without a map, they had no legal standing.</strong>\n\nWorking with NGOs, Dayak communities created their own maps: hand-drawn at first, then digitized into GIS, documenting hunting grounds, sacred sites, fruit tree locations, and seasonal use patterns across generations.\n\nThese counter-maps were accepted as evidence in Indonesian courts and helped protect over <strong>1 million hectares</strong> from logging. The practice spread — today, participatory mapping is used by communities from Jamaica to Canada to assert territorial claims the state would otherwise ignore.',
+    takeaway: 'Counter-mapping turns cartographic tools against the power that invented them. For communities without official recognition, making a map can be an act of legal and political survival.',
+    img: 'https://archschool.tulane.edu/sites/archschool.tulane.edu/files/styles/large/public/2022-06/participatory-mapping.jpg',
+    caption: 'Participatory mapping workshop with an indigenous community. Hand-drawn territorial knowledge is later digitized for legal advocacy. (Tulane School of Architecture)',
+  },
+  {
+    type: 'example',
+    num: 4,
+    label: 'Maps & Inequality',
+    title: 'Redlining: The Map as Policy',
+    body: 'In the 1930s, the U.S. Home Owners\' Loan Corporation (HOLC) produced "residential security maps" of American cities. Neighborhoods were graded A through D and color-coded: green for desirable, blue, yellow, and <strong>red for "hazardous."</strong>\n\nRedlined areas were overwhelmingly Black and immigrant neighborhoods. Banks and federal agencies used these maps to <strong>deny mortgages, refuse insurance, and withhold investment</strong> from entire communities for decades. The policy was systematic: it wasn\'t that these neighborhoods were risky — the map made them so.\n\nThe physical and economic effects are still measurable today. Studies in 2020 found that formerly redlined neighborhoods have <strong>significantly higher rates of asthma, heat exposure, and poverty</strong> than green-zoned areas in the same cities.',
+    takeaway: 'The HOLC maps didn\'t describe existing risk — they manufactured it. A map that cuts off investment produces exactly the disinvestment and decay it claims to merely observe.',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Home_Owners%27_Loan_Corporation_Philadelphia_redlining_map.jpg/800px-Home_Owners%27_Loan_Corporation_Philadelphia_redlining_map.jpg',
+    caption: 'HOLC "residential security" map of Philadelphia, 1936. Green = "Best," Blue = "Still Desirable," Yellow = "Declining," Red = "Hazardous." The color-coding structured decades of disinvestment.',
+  },
+  {
+    type: 'end',
+    icon: '🗺️',
+    title: 'Maps Make the World',
+    body: 'Every map is an argument. It decides what counts as a place, whose names appear, what scale matters, and who is visible. Critical cartography doesn\'t mean distrusting maps — it means reading them as the political documents they\'ve always been.',
+    concepts: ['Colonial naming', 'Terra nullius', 'North-up convention', 'Counter-mapping', 'Redlining', 'Spatial power'],
+  },
+];
+
+/* BUILD */
+const area = document.getElementById('slide-area');
+let current = 0;
+
+slides.forEach((s, i) => {
+  const el = document.createElement('div');
+  el.id = `slide-${i}`;
+  el.className = `slide slide-${s.type}`;
+
+  if (s.type === 'intro') {
+    el.innerHTML = `
+      <div class="intro-inner">
+        <div class="intro-tag">${s.tag}</div>
+        <h1 class="intro-h">${s.title}</h1>
+        <p class="intro-sub">${s.sub}</p>
+        <div class="intro-pills">${s.pills.map(p => `<span class="intro-pill">${p}</span>`).join('')}</div>
+      </div>`;
+
+  } else if (s.type === 'example') {
+    // Convert \n\n to paragraph breaks
+    const bodyHTML = s.body.split('\n\n').map(p => `<p>${p}</p>`).join('');
+    el.innerHTML = `
+      <div class="panel-visual">
+        <img class="panel-img" src="${s.img}" alt="${s.caption}" onerror="this.style.display='none'">
+        <div class="panel-caption">${s.caption}</div>
+      </div>
+      <div class="panel-content">
+        <div class="ex-label"><span class="ex-num">${s.num}</span>${s.label}</div>
+        <h2 class="ex-title">${s.title}</h2>
+        <div class="ex-body">${bodyHTML}</div>
+        <div class="takeaway"><span class="takeaway-label">Key Takeaway</span>${s.takeaway}</div>
+      </div>`;
+
+  } else if (s.type === 'end') {
+    el.innerHTML = `
+      <div class="end-icon">${s.icon}</div>
+      <h2 class="end-h">${s.title}</h2>
+      <p class="end-body">${s.body}</p>
+      <div class="end-tags">${s.concepts.map(c => `<span class="end-tag">${c}</span>`).join('')}</div>
+      <button class="btn-restart" onclick="goTo(0)">Start Over ↺</button>`;
+  }
+
+  area.appendChild(el);
+});
+
+/* NAVIGATE */
+function goTo(idx) {
+  if (idx < 0 || idx >= slides.length) return;
+  document.getElementById(`slide-${current}`).classList.remove('active');
+  current = idx;
+  document.getElementById(`slide-${current}`).classList.add('active');
+  area.scrollTop = 0;
+
+  const track = document.getElementById('progressTrack');
+  track.innerHTML = '';
+  slides.forEach((_, i) => {
+    const d = document.createElement('button');
+    d.className = 'prog-dot' + (i < current ? ' done' : '') + (i === current ? ' active' : '');
+    d.onclick = () => goTo(i);
+    track.appendChild(d);
+  });
+
+  document.getElementById('slideCounter').textContent = `${current + 1} / ${slides.length}`;
+  document.getElementById('btnPrev').disabled = current === 0;
+  document.getElementById('btnNext').disabled = current === slides.length - 1;
+  document.getElementById('navHint').textContent = {
+    intro: 'Press Next to begin',
+    example: 'Use arrow keys or buttons to navigate',
+    end: 'Course complete'
+  }[slides[current].type] || '';
+}
+
+document.getElementById('btnNext').onclick = () => goTo(current + 1);
+document.getElementById('btnPrev').onclick = () => goTo(current - 1);
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') goTo(current + 1);
+  if (e.key === 'ArrowLeft') goTo(current - 1);
+});
+
+goTo(0);
+</script>
+</body>
+</html>
